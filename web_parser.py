@@ -2,24 +2,18 @@
 
 import requests
 from bs4 import BeautifulSoup
+import re
 
 
-def get_js_script(url):
+def web_explore(url):
+    try:
+        soup = get_soup(url)
+        js_script_lists = get_js_scripts(soup)
+        link_lists = get_links(soup)
 
-    response = requests.get(url)
-    if response.status_code == 200:
-        res_list = []
-        html = response.text
-        soup = BeautifulSoup(html, 'html.parser')
-        
-        profiles = soup.find_all('script', type='text/javascript')
-        for profile in profiles:
-            res_list.append(profile['src'])
+    except Exception as e:
+        print(e)
 
-        return res_list
-
-    else:
-        print(f"[ERROR] response {str(response.status_code)}")
 
 '''
     sites = []
@@ -38,15 +32,30 @@ def get_js_script(url):
         sites.append(site_detail)
 '''
 
-def test_run():
-    url = "https://www.naver.com/"
-    return get_js_script(url)
+
+def get_soup(url):
+    response = requests.get(url)
+    if response.status_code == 200:
+        html = response.text
+        soup = BeautifulSoup(html, 'html.parser')
+        return soup
+
+    else:
+        raise Exception(f"[ERROR] response fail : {str(response.status_code)}")
 
 
-def main():
+def get_js_scripts(bsoup):
+    res_list = []
+    profiles = bsoup.find_all('script', type='text/javascript')
+    for profile in profiles:
+        res_list.append(profile['src'])
 
-    print(test_run())
+    return res_list
 
 
-if __name__=="__main__": 
-    main()
+def get_links(bsoup):
+    res_list = []
+    for link in bsoup.find_all('a', attrs={'href': re.compile("^http://")}):
+        res_list.append(link.get('href'))
+
+    return res_list
